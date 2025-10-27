@@ -505,7 +505,7 @@ void setup()
   getAnimationList();
   updateBrightness(true);
 
-frontCoverIndex = settings.mySettings.frontCover;
+  frontCoverIndex = settings.mySettings.frontCover;
 
 } // setup()
 
@@ -1166,14 +1166,14 @@ void loop()
         break;
 #endif
 #ifdef SHOW_MODE_WEEKDAY
-  case MODE_WEEKDAY: {
-    char firstChar = pgm_read_byte(&(sWeekdayTable[getCurrentWeekdayIndex()][weekday()][0]));
-    char secondChar = pgm_read_byte(&(sWeekdayTable[getCurrentWeekdayIndex()][weekday()][1]));
+      case MODE_WEEKDAY: {
+          char firstChar = pgm_read_byte(&(sWeekdayTable[getCurrentWeekdayIndex()][weekday()][0]));
+          char secondChar = pgm_read_byte(&(sWeekdayTable[getCurrentWeekdayIndex()][weekday()][1]));
 
-    String weekdayStr = String(firstChar) + String(secondChar);
-    renderer.setSmallText(weekdayStr, TEXT_POS_MIDDLE, matrix);
-    break;
-  }
+          String weekdayStr = String(firstChar) + String(secondChar);
+          renderer.setSmallText(weekdayStr, TEXT_POS_MIDDLE, matrix);
+          break;
+        }
 #endif
 #ifdef SHOW_MODE_DATE
       case MODE_DATE:
@@ -2692,17 +2692,35 @@ void setupWebServer()
 {
   webServer.onNotFound(handleNotFound);
   webServer.on("/", handleRoot);
-  webServer.on("/handleButtonOnOff", []() { buttonOnOffPressed(); callRoot();});
+  webServer.on("/handleButtonOnOff", []() {
+    buttonOnOffPressed();
+    callRoot();
+  });
   webServer.on("/handleButtonSettings", handleButtonSettings);
   webServer.on("/handleButtonEvents", handleButtonEvents);
-  webServer.on("/handleButtonMode", []() { buttonModePressed(); callRoot(); });
-  webServer.on("/commitSettings", []() { handleCommitSettings(); callRoot(); });
-  webServer.on("/handleButtonTime", []() { buttonTimePressed(); callRoot(); });
+  webServer.on("/handleButtonMode", []() {
+    buttonModePressed();
+    callRoot();
+  });
+  webServer.on("/commitSettings", []() {
+    handleCommitSettings();
+    callRoot();
+  });
+  webServer.on("/handleButtonTime", []() {
+    buttonTimePressed();
+    callRoot();
+  });
   webServer.on("/commitEvents", handleCommitEvents);
-  webServer.on("/commitAdminSettings", []() {handleCommitAdminSettings(); callRoot();});
+  webServer.on("/commitAdminSettings", []() {
+    handleCommitAdminSettings();
+    callRoot();
+  });
 
   webServer.on("/admin", handleAdmin);
-  webServer.on("/reset", []() { handleReset(); callRoot(); });
+  webServer.on("/reset", []() {
+    handleReset();
+    callRoot();
+  });
   webServer.on("/wifiReset", handleWiFiReset);
   webServer.on("/factoryReset", handleFactoryReset);
   webServer.on("/settingsReset", handleSettingsReset);
@@ -2718,7 +2736,7 @@ void callRoot()
 // Page 404
 void handleNotFound()
 {
-   webServer.send(404, "text/plain", TXT_404);
+  webServer.send(404, "text/plain", TXT_404);
 }
 
 // Page /
@@ -2733,26 +2751,49 @@ void handleRoot()
   message += F("<link rel=\"shortcut icon\" type=\"image/x-icon\" href=\"web/favicon.ico\">");
   message += F("<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\">");
   message += F("<style>");
-  message += F("body{background-color:#FFFFFF;text-align:center;color:#333333;font-family:Sans-serif;font-size:16px;}");
-  message += F("button{background-color:#1FA3EC;text-align:center;color:#FFFFFF;width:200px;padding:10px;border:5px solid #FFFFFF;font-size:24px;border-radius:10px;}");
+  message += F(".page-wrapper{max-width:600px;margin:0 auto;text-align:center;}");
+  ... // nur CSS hier
+  message += F("</style>");
+  message += F("<script>");
+  message += F("function setClearMode() { document.body.classList.remove('dark'); }");
+  message += F("function setDarkMode() { document.body.classList.add('dark'); }");
+  message += F("</script>");
+  message += F("body{background-color:#FFFFFF;text-align:center;color:#000000;font-family:Sans-serif;font-size:16px;transition:background-color 0.3s, color 0.3s;}");
+  message += F("button.icon-btn{width:80px;height:80px;font-size:32px;background-color:#FFFFFF;color:#000000;border:2px solid #CCCCCC;border-radius:0px;transition:0.3s;}");
+  message += F("button.icon-btn:hover{background-color:#F0F0F0;border-color:#000000;}");
+  message += F(".mode-toggle{margin:20px;}");
+  message += F(".mode-toggle button{width:120px;height:40px;font-size:16px;margin:0 10px;background-color:#EEEEEE;color:#000000;border-radius:0px;border:1px solid #999999;cursor:pointer;}");
+  message += F(".main-title{font-weight:300;font-size:28px;letter-spacing:2px;margin-top:20px;}");
+  message += F(".button-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;margin:30px 0;}");
   message += F("</style>");
   message += F("</head>");
   message += F("<body>");
-  message += F("<h1>") + String(WEBSITE_TITLE) + F("</h1>");
+  message += F("<div class='page-wrapper'>");
+  message += F("<h1 class='main-title'>") + String(WEBSITE_TITLE) + F("</h1>");
 #ifdef DEDICATION
   message += DEDICATION;
   message += F("<br><br>");
 #endif
-  if (mode == MODE_BLANK) message += "<button onclick=\"window.location.href='/handleButtonOnOff'\"><i class=\"fa fa-toggle-off\"></i></button>";
+message += F("<div class='button-grid'>");
 
-  else message += "<button onclick=\"window.location.href='/handleButtonOnOff'\"><i class=\"fa fa-toggle-on\"></i></button>";
+if (mode == MODE_BLANK)
+  message += F("<button class='icon-btn' title='Power' onclick=\"window.location.href='/handleButtonOnOff'\"><i class='fa fa-toggle-off'></i></button>");
+else
+  message += F("<button class='icon-btn' title='Power' onclick=\"window.location.href='/handleButtonOnOff'\"><i class='fa fa-toggle-on'></i></button>");
 
-  message += "<button onclick=\"window.location.href='/handleButtonSettings'\"><i class=\"fa fa-gear\"></i></button>";
-  //message += "<br><br>";
-  message += "<button onclick=\"window.location.href='/handleButtonMode'\"><i class=\"fa fa-bars\"></i></button>";
-  message += "<button onclick=\"window.location.href='/handleButtonTime'\"><i class=\"fa fa-clock-o\"></i></button>";
-  //message += "<br><br>";
-  message += "<button title=\"Events\" onclick=\"window.location.href='/handleButtonEvents'\"><i class=\"fa fa-birthday-cake\"></i></button>";
+message += F("<button class='icon-btn' title='Settings' onclick=\"window.location.href='/handleButtonSettings'\"><i class='fa fa-cog'></i></button>");
+message += F("<button class='icon-btn' title='Mode' onclick=\"window.location.href='/handleButtonMode'\"><i class='fa fa-bars'></i></button>");
+message += F("<button class='icon-btn' title='Time' onclick=\"window.location.href='/handleButtonTime'\"><i class='fa fa-clock-o'></i></button>");
+message += F("<button class='icon-btn' title='Events' onclick=\"window.location.href='/handleButtonEvents'\"><i class='fa fa-birthday-cake'></i></button>");
+message += F("<button class='icon-btn' title='Sun'><i class='fa fa-sun-o'></i></button>");
+message += F("</div>");
+message += F("<br><br>"); 
+message += F("<div class='mode-toggle'>");
+message += "<button onclick=\"setClearMode()\">" + String(TXT_MODE_CLEAR) + "</button>";
+message += "<button onclick=\"setDarkMode()\">" + String(TXT_MODE_DARK) + "</button>";
+
+message += F("</div>");
+
 #if defined(RTC_BACKUP) || defined(SENSOR_DHT22) || defined(SENSOR_MCP9808) || defined(SENSOR_BME280)
   message += F("<br><br><i class = \"fa fa-home\" style=\"font-size:20px;\"></i>");
   message += F("<br><i class=\"fa fa-thermometer\" style=\"font-size:20px;\"></i> ") + String(roomTemperature) + F("&deg;C / ") + String(roomTemperature * 1.8 + 32.0) + F("&deg;F");
@@ -2799,7 +2840,8 @@ void handleRoot()
 #endif
   message += F("<span style=\"font-size:12px;\">");
   message += F("<br><br><a href=\"http://shop.bracci.ch/\">zytQuadrat</a> was <i class=\"fa fa-code\"></i> with <i class=\"fa fa-heart\"></i> by <a href=\"https://github.com/ch570512/Qlockwork/\">ch570512</a> and <a href=\"https://github.com/bracci/Qlockwork/\">bracci</a>");
-  message += "<br>Transformaziun en ura da plaids, <a href=\"http://ura-da-plaids.ch\">Giachen Caduff.</a>";
+  message += F("<br>Transformaziun en ura da plaids, <a href=\"http://ura-da-plaids.ch\">Giachen Caduff.</a>");
+
   message += F("<br>Firmware: ") + String(FIRMWARE_VERSION);
 #ifdef UPDATE_INFOSERVER
   if (updateInfo > int(FIRMWARE_VERSION))
@@ -2900,6 +2942,7 @@ void handleRoot()
 #endif
 #endif
   message += F("</span></body></html>");
+  message += F("</div>");
   webServer.send(200, "text/html", message);
 }
 
@@ -3272,19 +3315,19 @@ void handleButtonSettings()
   message += F("<input type=\"datetime-local\" name=\"st\">");
   message += F("</td></tr>");
   // ------------------------------------------------------------------------
-message += F("</table>");
-message += F("<br><button title=\"Save Settings.\"><i class=\"fa fa-floppy-o\"></i></button>");
-message += F("</form>");
-message += F("<br><br>");
-message += F("<div style=\"display: flex; flex-direction: column; align-items: center; gap: 10px;\">");
-message += F("<button title=\"Events\" onclick=\"window.location.href='/handleButtonEvents'\"><i class=\"fa fa-birthday-cake\"></i></button>");
-message += F("<button title=\"Home\" onclick=\"window.location.href='/'\"><i class=\"fa fa-home\"></i></button>");
-message += F("</div>");
-message += F("</body></html>");
-webServer.send(200, "text/html", message);
+  message += F("</table>");
+  message += F("<br><button title=\"Save Settings.\"><i class=\"fa fa-floppy-o\"></i></button>");
+  message += F("</form>");
+  message += F("<br><br>");
+  message += F("<div style=\"display: flex; flex-direction: column; align-items: center; gap: 10px;\">");
+  message += F("<button title=\"Events\" onclick=\"window.location.href='/handleButtonEvents'\"><i class=\"fa fa-birthday-cake\"></i></button>");
+  message += F("<button title=\"Home\" onclick=\"window.location.href='/'\"><i class=\"fa fa-home\"></i></button>");
+  message += F("</div>");
+  message += F("</body></html>");
+  webServer.send(200, "text/html", message);
 
 
-  }
+}
 
 // Page Events
 void handleButtonEvents()
@@ -3315,26 +3358,26 @@ void handleButtonEvents()
 
   // ------------------------------------------------------------------------
   for (uint8_t i = 0; i < NUM_EVTS; i++) {
-  message += F("<tr><td rowspan=\"6\">");
+    message += F("<tr><td rowspan=\"6\">");
     if (settings.mySettings.events[i].enabled) {
-  message += F("<b>") + String(TXT_EVENT) + " " + String(i + 1) + F("</b>");
+      message += F("<b>") + String(TXT_EVENT) + " " + String(i + 1) + F("</b>");
     } else {
-  message += String(TXT_EVENT) + " " + String(i + 1);
+      message += String(TXT_EVENT) + " " + String(i + 1);
     }
-  message += F("</td><td>");
+    message += F("</td><td>");
     if (settings.mySettings.events[i].enabled)
-  message += F("<b>") + String(TXT_ACTIVE) + F("</b>");
+      message += F("<b>") + String(TXT_ACTIVE) + F("</b>");
     else
-  message += String(TXT_ACTIVE);
-  message += F("</td><td>");
-  message += F("<input type=\"radio\" name=\"ev") + String(i) + F("\" value=\"1\"");
+      message += String(TXT_ACTIVE);
+    message += F("</td><td>");
+    message += F("<input type=\"radio\" name=\"ev") + String(i) + F("\" value=\"1\"");
     if (settings.mySettings.events[i].enabled)
-  message += F(" checked");
-  message += F(">");
+      message += F(" checked");
+    message += F(">");
     if (settings.mySettings.events[i].enabled)
-  message += F("<b>") + String(TXT_ON) + F("</b>");
+      message += F("<b>") + String(TXT_ON) + F("</b>");
     else
-  message += String(TXT_ON);
+      message += String(TXT_ON);
 
     message += F(" <input type=\"radio\" name=\"ev") + String(i) + F("\" value=\"0\"");
     if (!settings.mySettings.events[i].enabled) message += F(" checked");
@@ -3413,7 +3456,7 @@ void handleButtonEvents()
 void handleAdmin()
 {
 
-//Admin Page
+  //Admin Page
 
 #ifdef DEBUG
   Serial.println("Admin settings entered.");
@@ -3443,7 +3486,7 @@ void handleAdmin()
   message += F("<form action=\"/commitAdminSettings\">");
   message += F("<table>");
   // ------------------------------------------------------------------------
-  
+
 
   // ------------------------------------------------------------------------
   message += F("<tr><td>");

@@ -2740,8 +2740,7 @@ void handleNotFound()
 }
 
 // Page /
-void handleRoot()
-{
+void handleRoot() {
   String message = F("<!doctype html>");
   message += F("<html>");
   message += F("<head>");
@@ -2750,49 +2749,53 @@ void handleRoot()
   message += F("<meta http-equiv=\"refresh\" content=\"60\" charset=\"UTF-8\">");
   message += F("<link rel=\"shortcut icon\" type=\"image/x-icon\" href=\"web/favicon.ico\">");
   message += F("<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\">");
+
+  // CSS
   message += F("<style>");
+  message += F("body{background-color:#FFFFFF;color:#000000;font-family:Sans-serif;font-size:16px;transition:background-color 0.3s, color 0.3s;}");
   message += F(".page-wrapper{max-width:600px;margin:0 auto;text-align:center;}");
-  ... // nur CSS hier
-  message += F("</style>");
-  message += F("<script>");
-  message += F("function setClearMode() { document.body.classList.remove('dark'); }");
-  message += F("function setDarkMode() { document.body.classList.add('dark'); }");
-  message += F("</script>");
-  message += F("body{background-color:#FFFFFF;text-align:center;color:#000000;font-family:Sans-serif;font-size:16px;transition:background-color 0.3s, color 0.3s;}");
+  message += F(".main-title{font-weight:300;font-size:28px;letter-spacing:2px;margin-top:20px;}");
+  message += F(".button-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;margin:30px 0;}");
   message += F("button.icon-btn{width:80px;height:80px;font-size:32px;background-color:#FFFFFF;color:#000000;border:2px solid #CCCCCC;border-radius:0px;transition:0.3s;}");
   message += F("button.icon-btn:hover{background-color:#F0F0F0;border-color:#000000;}");
   message += F(".mode-toggle{margin:20px;}");
   message += F(".mode-toggle button{width:120px;height:40px;font-size:16px;margin:0 10px;background-color:#EEEEEE;color:#000000;border-radius:0px;border:1px solid #999999;cursor:pointer;}");
-  message += F(".main-title{font-weight:300;font-size:28px;letter-spacing:2px;margin-top:20px;}");
-  message += F(".button-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;margin:30px 0;}");
   message += F("</style>");
+  
+    // JavaScript
+  message += F("<script>");
+  message += F("function setClearMode() { document.body.classList.remove('dark'); }");
+  message += F("function setDarkMode() { document.body.classList.add('dark'); }");
+  message += F("</script>");
+  
   message += F("</head>");
   message += F("<body>");
   message += F("<div class='page-wrapper'>");
+  
+   // Titel
   message += F("<h1 class='main-title'>") + String(WEBSITE_TITLE) + F("</h1>");
 #ifdef DEDICATION
   message += DEDICATION;
   message += F("<br><br>");
 #endif
-message += F("<div class='button-grid'>");
-
-if (mode == MODE_BLANK)
-  message += F("<button class='icon-btn' title='Power' onclick=\"window.location.href='/handleButtonOnOff'\"><i class='fa fa-toggle-off'></i></button>");
-else
-  message += F("<button class='icon-btn' title='Power' onclick=\"window.location.href='/handleButtonOnOff'\"><i class='fa fa-toggle-on'></i></button>");
-
-message += F("<button class='icon-btn' title='Settings' onclick=\"window.location.href='/handleButtonSettings'\"><i class='fa fa-cog'></i></button>");
-message += F("<button class='icon-btn' title='Mode' onclick=\"window.location.href='/handleButtonMode'\"><i class='fa fa-bars'></i></button>");
-message += F("<button class='icon-btn' title='Time' onclick=\"window.location.href='/handleButtonTime'\"><i class='fa fa-clock-o'></i></button>");
-message += F("<button class='icon-btn' title='Events' onclick=\"window.location.href='/handleButtonEvents'\"><i class='fa fa-birthday-cake'></i></button>");
-message += F("<button class='icon-btn' title='Sun'><i class='fa fa-sun-o'></i></button>");
-message += F("</div>");
-message += F("<br><br>"); 
-message += F("<div class='mode-toggle'>");
-message += "<button onclick=\"setClearMode()\">" + String(TXT_MODE_CLEAR) + "</button>";
-message += "<button onclick=\"setDarkMode()\">" + String(TXT_MODE_DARK) + "</button>";
-
-message += F("</div>");
+ // Icon-Buttons
+  message += F("<div class='button-grid'>");
+  if (mode == MODE_BLANK)
+    message += F("<button class='icon-btn' title='Power' onclick=\"window.location.href='/handleButtonOnOff'\"><i class='fa fa-toggle-off'></i></button>");
+  else
+    message += F("<button class='icon-btn' title='Power' onclick=\"window.location.href='/handleButtonOnOff'\"><i class='fa fa-toggle-on'></i></button>");
+  message += F("<button class='icon-btn' title='Settings' onclick=\"window.location.href='/handleButtonSettings'\"><i class='fa fa-cog'></i></button>");
+  message += F("<button class='icon-btn' title='Mode' onclick=\"window.location.href='/handleButtonMode'\"><i class='fa fa-bars'></i></button>");
+  message += F("<button class='icon-btn' title='Time' onclick=\"window.location.href='/handleButtonTime'\"><i class='fa fa-clock-o'></i></button>");
+  message += F("<button class='icon-btn' title='Events' onclick=\"window.location.href='/handleButtonEvents'\"><i class='fa fa-birthday-cake'></i></button>");
+  message += F("<button class='icon-btn' title='Sun'><i class='fa fa-sun-o'></i></button>");
+  message += F("</div>");
+// Umschaltbuttons
+  message += F("<br><br>");
+  message += F("<div class='mode-toggle'>");
+  message += "<button onclick=\"setClearMode()\">" + String(TXT_MODE_CLEAR) + "</button>";
+  message += "<button onclick=\"setDarkMode()\">" + String(TXT_MODE_DARK) + "</button>";
+  message += F("</div>");
 
 #if defined(RTC_BACKUP) || defined(SENSOR_DHT22) || defined(SENSOR_MCP9808) || defined(SENSOR_BME280)
   message += F("<br><br><i class = \"fa fa-home\" style=\"font-size:20px;\"></i>");
@@ -2941,8 +2944,8 @@ message += F("</div>");
   message += F("<s>BUTTONS</s> ");
 #endif
 #endif
-  message += F("</span></body></html>");
-  message += F("</div>");
+  message += F("</div>"); // schließt .page-wrapper
+  message += F("</body></html>");
   webServer.send(200, "text/html", message);
 }
 

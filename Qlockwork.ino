@@ -34,6 +34,7 @@
 #include <WiFiManager.h>
 #include <TimeLib.h>
 #include <LittleFS.h>
+#include <EEPROM.h>
 
 #include "Colors.h"
 #include "Configuration.h"
@@ -83,6 +84,9 @@ char HostNameAp[32];
 
 // Frontcover
 eFrontCover frontCoverIndex;
+
+//Darkmode
+bool isDarkMode = true; // Standardwert
 
 // Servers
 ESP8266WebServer webServer(80);
@@ -262,12 +266,27 @@ void onWifiDisconnect(const WiFiEventStationModeDisconnected& event) {
 
 void setup()
 {
+  EEPROM.begin(128); // oder 128, je nach Speicherbedarf
+  isDarkMode = EEPROM.read(0) == 1;
+
   // init serial port
   Serial.begin(SERIAL_SPEED);
   while (!Serial);
   delay(1000);
 
   rtc_info = system_get_rst_info();
+}
+
+//*****************************************************************************
+// Dark Mode speichern
+//*****************************************************************************
+
+void setDisplayMode(bool dark) {
+  isDarkMode = dark;
+  EEPROM.write(0, dark ? 1 : 0);
+  EEPROM.commit();
+}
+
 
   // And the monkey flips the switch. (Akiva Goldsman)
   Serial.println();
@@ -2692,6 +2711,16 @@ void setupWebServer()
 {
   webServer.onNotFound(handleNotFound);
   webServer.on("/", handleRoot);
+  
+//*****************************************************************************
+// Webserver
+//*****************************************************************************
+
+
+void setupWebServer()
+{
+  webServer.onNotFound(handleNotFound);
+  webServer.on("/", handleRoot);
   webServer.on("/handleButtonOnOff", []() {
     buttonOnOffPressed();
     callRoot();
@@ -2726,8 +2755,20 @@ void setupWebServer()
   webServer.on("/settingsReset", handleSettingsReset);
   webServer.on("/showText", handleShowText);
   webServer.on("/control", handleControl);
+
+  // Dark Mode speichern
+  webServer.on("/setDarkMode", []() {
+    setDisplayMode(true);
+    webServer.send(200, "text/plain", "Dark mode gespeichert");
+  });
+  webServer.on("/setClearMode", []() {
+    setDisplayMode(false);
+    webServer.send(200, "text/plain", "Clear mode gespeichert");
+  });
+
   webServer.begin();
 }
+
 void callRoot()
 {
   webServer.send(200, "text/html", "<!doctype html><html><head><script>window.onload=function(){window.location.replace('/');}</script></head></html>");
@@ -2752,24 +2793,51 @@ void handleRoot() {
 
   // CSS
   message += F("<style>");
-  message += F("body{background-color:#FFFFFF;color:#000000;font-family:Sans-serif;font-size:16px;transition:background-color 0.3s, color 0.3s;}");
+  message += F("body{background-color:#FFFFFF;color:#000000;font-family:'Segoe UI',sans-serif;text-align:center;transition:background-color 0.3s, color 0.3s;}");
   message += F(".page-wrapper{max-width:600px;margin:0 auto;text-align:center;}");
   message += F(".main-title{font-weight:300;font-size:28px;letter-spacing:2px;margin-top:20px;}");
   message += F(".button-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;margin:30px 0;}");
+  message += F(".sun-hidden{display:none;}");
   message += F("button.icon-btn{width:80px;height:80px;font-size:32px;background-color:#FFFFFF;color:#000000;border:2px solid #CCCCCC;border-radius:0px;transition:0.3s;}");
   message += F("button.icon-btn:hover{background-color:#F0F0F0;border-color:#000000;}");
   message += F(".mode-toggle{margin:20px;}");
   message += F(".mode-toggle button{width:120px;height:40px;font-size:16px;margin:0 10px;background-color:#EEEEEE;color:#000000;border-radius:0px;border:1px solid #999999;cursor:pointer;}");
-  message += F("</style>");
+  message += F(".footer{font-size:12px;color:#444444;margin-top:40px;}");
+  message += F(".footer a{color:#000000;text-decoration:none;}");
+  message += F("body.dark .footer{color:#AAAAAA;}"); // dunkler als Haupttext
+  message += F("body.dark .footer a{color:#80BFFF;text-decoration:none;}");
   
-    // JavaScript
+  // Dark Mode
+  message += F("body.dark{background-color:#121212;color:#E0E0E0;}");
+  message += F("body.dark button.icon-btn{background-color:#1E1E1E;color:#E0E0E0;border:2px solid #444444;}");
+  message += F("body.dark button.icon-btn:hover{background-color:#2A2A2A;color:#80BFFF;border-color:#80BFFF;}");
+  message += F("body.dark .mode-toggle button{background-color:#333333;color:#E0E0E0;border:1px solid #666666;}");
+  message += F("body.dark .footer{color:#AAAAAA;}");
+  message += F("body.dark .footer a{color:#80BFFF;text-decoration:none;}");
+  message += F("</style>");
+  // Java Script
   message += F("<script>");
-  message += F("function setClearMode() { document.body.classList.remove('dark'); }");
-  message += F("function setDarkMode() { document.body.classList.add('dark'); }");
+  message += F("function toggleMode() {");
+  message += F("  const body = document.body;");
+  message += F("  const icon = document.getElementById('mode-icon');");
+  message += F("  const isDark = body.classList.toggle('dark');");
+  message += F("  localStorage.setItem('mode', isDark ? 'dark' : 'clear');");
+  message += F("  icon.className = isDark ? 'fa fa-sun-o' : 'fa fa-moon-o';");
+  message += F("  fetch(isDark ? '/setDarkMode' : '/setClearMode');"); // optional: serverseitig speichern
+  message += F("}");
+  message += F("window.onload = function() {");
+  message += F("  const body = document.body;");
+  message += F("  const icon = document.getElementById('mode-icon');");
+  message += F("  const mode = localStorage.getItem('mode');");
+  message += F("  if (!mode) { localStorage.setItem('mode', body.classList.contains('dark') ? 'dark' : 'clear'); }");
+  message += F("  if (mode === 'dark') { body.classList.add('dark'); icon.className = 'fa fa-sun-o'; }");
+  message += F("  else { body.classList.remove('dark'); icon.className = 'fa fa-moon-o'; }");
+  message += F("}");
   message += F("</script>");
+
   
   message += F("</head>");
-  message += F("<body>");
+  message += String("<body class='") + (isDarkMode ? "dark" : "") + "'>";
   message += F("<div class='page-wrapper'>");
   
    // Titel
@@ -2788,13 +2856,7 @@ void handleRoot() {
   message += F("<button class='icon-btn' title='Mode' onclick=\"window.location.href='/handleButtonMode'\"><i class='fa fa-bars'></i></button>");
   message += F("<button class='icon-btn' title='Time' onclick=\"window.location.href='/handleButtonTime'\"><i class='fa fa-clock-o'></i></button>");
   message += F("<button class='icon-btn' title='Events' onclick=\"window.location.href='/handleButtonEvents'\"><i class='fa fa-birthday-cake'></i></button>");
-  message += F("<button class='icon-btn' title='Sun'><i class='fa fa-sun-o'></i></button>");
-  message += F("</div>");
-// Umschaltbuttons
-  message += F("<br><br>");
-  message += F("<div class='mode-toggle'>");
-  message += "<button onclick=\"setClearMode()\">" + String(TXT_MODE_CLEAR) + "</button>";
-  message += "<button onclick=\"setDarkMode()\">" + String(TXT_MODE_DARK) + "</button>";
+  message += F("<button class='icon-btn' title='Toggle Mode' onclick='toggleMode()'><i id='mode-icon' class='fa fa-moon-o'></i></button>");
   message += F("</div>");
 
 #if defined(RTC_BACKUP) || defined(SENSOR_DHT22) || defined(SENSOR_MCP9808) || defined(SENSOR_BME280)
@@ -2841,11 +2903,13 @@ void handleRoot() {
     message += F("<br>") + outdoorWeather.description;
   }
 #endif
-  message += F("<span style=\"font-size:12px;\">");
+  // Footer
+  message += F("<div class='footer'>");
   message += F("<br><br><a href=\"http://shop.bracci.ch/\">zytQuadrat</a> was <i class=\"fa fa-code\"></i> with <i class=\"fa fa-heart\"></i> by <a href=\"https://github.com/ch570512/Qlockwork/\">ch570512</a> and <a href=\"https://github.com/bracci/Qlockwork/\">bracci</a>");
   message += F("<br>Transformaziun en ura da plaids, <a href=\"http://ura-da-plaids.ch\">Giachen Caduff.</a>");
-
   message += F("<br>Firmware: ") + String(FIRMWARE_VERSION);
+  message += F("</div>"); // schließt .footer
+  message += F("</div>"); // schließt .page-wrapper
 #ifdef UPDATE_INFOSERVER
   if (updateInfo > int(FIRMWARE_VERSION))
     message += F("<br><span style=\"color:red;\">Firmwareupdate available! (") + String(updateInfo) + F(")</span>");

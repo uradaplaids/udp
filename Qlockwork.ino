@@ -274,6 +274,10 @@ void setup()
   while (!Serial);
   delay(1000);
 
+  Serial.println();
+  Serial.println("*** Ura da plaids ***");
+  Serial.println("Firmware: " + String(FIRMWARE_VERSION));
+
   rtc_info = system_get_rst_info();
 }
 
@@ -288,10 +292,7 @@ void setDisplayMode(bool dark) {
 }
 
 
-  // And the monkey flips the switch. (Akiva Goldsman)
-  Serial.println();
-  Serial.println("*** Ura da plaids ***");
-  Serial.println("Firmware: " + String(FIRMWARE_VERSION));
+
   memset(HostName, 0, sizeof(HostName));
   sprintf(HostName, "%s-%06X", PRODUCT_NAME, ESP.getChipId());
   memcpy(HostNameAp, HostName, sizeof(HostName));

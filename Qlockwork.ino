@@ -268,31 +268,20 @@ void setup()
 {
   EEPROM.begin(128); // oder 128, je nach Speicherbedarf
   isDarkMode = EEPROM.read(0) == 1;
+  
+
 
   // init serial port
   Serial.begin(SERIAL_SPEED);
   while (!Serial);
   delay(1000);
 
+  rtc_info = system_get_rst_info();
+
+  // And the monkey flips the switch. (Akiva Goldsman)
   Serial.println();
   Serial.println("*** Ura da plaids ***");
   Serial.println("Firmware: " + String(FIRMWARE_VERSION));
-
-  rtc_info = system_get_rst_info();
-}
-
-//*****************************************************************************
-// Dark Mode speichern
-//*****************************************************************************
-
-void setDisplayMode(bool dark) {
-  isDarkMode = dark;
-  EEPROM.write(0, dark ? 1 : 0);
-  EEPROM.commit();
-}
-
-
-
   memset(HostName, 0, sizeof(HostName));
   sprintf(HostName, "%s-%06X", PRODUCT_NAME, ESP.getChipId());
   memcpy(HostNameAp, HostName, sizeof(HostName));
@@ -2712,16 +2701,6 @@ void setupWebServer()
 {
   webServer.onNotFound(handleNotFound);
   webServer.on("/", handleRoot);
-  
-//*****************************************************************************
-// Webserver
-//*****************************************************************************
-
-
-void setupWebServer()
-{
-  webServer.onNotFound(handleNotFound);
-  webServer.on("/", handleRoot);
   webServer.on("/handleButtonOnOff", []() {
     buttonOnOffPressed();
     callRoot();
@@ -2756,20 +2735,8 @@ void setupWebServer()
   webServer.on("/settingsReset", handleSettingsReset);
   webServer.on("/showText", handleShowText);
   webServer.on("/control", handleControl);
-
-  // Dark Mode speichern
-  webServer.on("/setDarkMode", []() {
-    setDisplayMode(true);
-    webServer.send(200, "text/plain", "Dark mode gespeichert");
-  });
-  webServer.on("/setClearMode", []() {
-    setDisplayMode(false);
-    webServer.send(200, "text/plain", "Clear mode gespeichert");
-  });
-
   webServer.begin();
 }
-
 void callRoot()
 {
   webServer.send(200, "text/html", "<!doctype html><html><head><script>window.onload=function(){window.location.replace('/');}</script></head></html>");
